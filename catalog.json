@@ -1,0 +1,43 @@
+{
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0/",
+  "source": "https://github.com/CommonPaper",
+  "templates": [
+    {
+      "name": "Mutual Non-Disclosure Agreement",
+      "name_ja": "相互秘密保持契約",
+      "description": "A standard mutual NDA allowing both parties to share confidential information for a defined purpose.",
+      "description_ja": "定義された目的のために両当事者が機密情報を共有することを可能にする標準的な相互秘密保持契約。",
+      "raw": "raws/Mutual-NDA.md",
+      "template": "templates/Mutual-NDA.md",
+      "source_repo": "https://github.com/CommonPaper/Mutual-NDA"
+    },
+    {
+      "name": "Mutual Non-Disclosure Agreement Cover Page",
+      "name_ja": "相互秘密保持契約 表紙",
+      "description": "The cover page for the Mutual NDA, to be completed and signed by both parties.",
+      "description_ja": "両当事者が記入・署名するための相互秘密保持契約の表紙。",
+      "raw": "raws/Mutual-NDA-coverpage.md",
+      "template": "templates/Mutual-NDA-coverpage.md",
+      "source_repo": "https://github.com/CommonPaper/Mutual-NDA"
+    },
+    {
+      "name": "Design Partner Agreement",
+      "name_ja": "デザインパートナー契約",
+      "description": "A standard agreement governing early-access product testing partnerships, including feedback, confidentiality, and IP ownership.",
+      "description_ja": "フィードバック、機密保持、知的財産の所有権を含む、早期アクセス製品テストパートナーシップを規律する標準契約。",
+      "raw": "raws/design-partner-agreement.md",
+      "template": "templates/design-partner-agreement.md",
+      "source_repo": "https://github.com/CommonPaper/Design-Partner-Agreement"
+    },
+    {
+      "name": "Service Level Agreement",
+      "name_ja": "サービスレベル契約",
+      "description": "A standard SLA defining uptime targets, response time commitments, and service credit remedies for cloud services.",
+      "description_ja": "クラウドサービスの稼働率目標、応答時間のコミットメント、サービスクレジットによる救済措置を定義する標準サービスレベル契約。",
+      "raw": "raws/sla.md",
+      "template": "templates/sla.md",
+      "source_repo": "https://github.com/CommonPaper/SLA"
+    }
+  ]
+}
