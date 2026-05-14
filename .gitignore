@@ -37,6 +37,7 @@ htmlcov/
 *.log
 
 # Next.js
+!frontend/src/lib/
 node_modules/
 .next/
 out/
