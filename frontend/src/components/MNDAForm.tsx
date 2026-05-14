@@ -14,10 +14,12 @@ interface Props {
 
 function PartySection({
   label,
+  idPrefix,
   party,
   onUpdate,
 }: {
   label: string;
+  idPrefix: string;
   party: MndaFormData["party1"];
   onUpdate: (party: MndaFormData["party1"]) => void;
 }) {
@@ -31,24 +33,24 @@ function PartySection({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="space-y-1">
-          <Label>署名者氏名</Label>
-          <Input value={party.signatoryName} onChange={set("signatoryName")} placeholder="山田 太郎" />
+          <Label htmlFor={`${idPrefix}-name`}>署名者氏名</Label>
+          <Input id={`${idPrefix}-name`} value={party.signatoryName} onChange={set("signatoryName")} placeholder="山田 太郎" />
         </div>
         <div className="space-y-1">
-          <Label>役職</Label>
-          <Input value={party.title} onChange={set("title")} placeholder="代表取締役" />
+          <Label htmlFor={`${idPrefix}-title`}>役職</Label>
+          <Input id={`${idPrefix}-title`} value={party.title} onChange={set("title")} placeholder="代表取締役" />
         </div>
         <div className="space-y-1">
-          <Label>会社</Label>
-          <Input value={party.company} onChange={set("company")} placeholder="株式会社〇〇" />
+          <Label htmlFor={`${idPrefix}-company`}>会社</Label>
+          <Input id={`${idPrefix}-company`} value={party.company} onChange={set("company")} placeholder="株式会社〇〇" />
         </div>
         <div className="space-y-1">
-          <Label>通知先（メールまたは郵便住所）</Label>
-          <Textarea value={party.noticeAddress} onChange={set("noticeAddress")} placeholder="example@company.com" rows={2} />
+          <Label htmlFor={`${idPrefix}-address`}>通知先（メールまたは郵便住所）</Label>
+          <Textarea id={`${idPrefix}-address`} value={party.noticeAddress} onChange={set("noticeAddress")} placeholder="example@company.com" rows={2} />
         </div>
         <div className="space-y-1">
-          <Label>日付</Label>
-          <Input type="date" value={party.date} onChange={set("date")} />
+          <Label htmlFor={`${idPrefix}-date`}>日付</Label>
+          <Input id={`${idPrefix}-date`} type="date" value={party.date} onChange={set("date")} />
         </div>
       </CardContent>
     </Card>
@@ -75,9 +77,10 @@ export default function MNDAForm({ data, onChange }: Props) {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1">
-            <Label>目的</Label>
+            <Label htmlFor="purpose">目的</Label>
             <p className="text-xs text-muted-foreground">機密情報の使用方法</p>
             <Textarea
+              id="purpose"
               value={data.purpose}
               onChange={onInputChange("purpose")}
               placeholder="相手方との事業関係を締結するかどうかの評価"
@@ -85,8 +88,8 @@ export default function MNDAForm({ data, onChange }: Props) {
             />
           </div>
           <div className="space-y-1">
-            <Label>発効日</Label>
-            <Input type="date" value={data.effectiveDate} onChange={(e) => onChange({ ...data, effectiveDate: e.target.value })} />
+            <Label htmlFor="effectiveDate">発効日</Label>
+            <Input id="effectiveDate" type="date" value={data.effectiveDate} onChange={(e) => onChange({ ...data, effectiveDate: e.target.value })} />
           </div>
         </CardContent>
       </Card>
@@ -98,10 +101,12 @@ export default function MNDAForm({ data, onChange }: Props) {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xs text-muted-foreground">このMNDAの有効期間</p>
-          <div className="space-y-2">
+          <fieldset className="space-y-2 border-0 p-0 m-0">
+            <legend className="sr-only">MNDA期間の選択</legend>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
+                name="mndaTerm"
                 checked={data.mndaTerm.type === "expires"}
                 onChange={() => set("mndaTerm")({ type: "expires", years: data.mndaTerm.type === "expires" ? data.mndaTerm.years : 1 })}
                 className="accent-primary"
@@ -110,6 +115,7 @@ export default function MNDAForm({ data, onChange }: Props) {
               <Input
                 type="number"
                 min={1}
+                aria-label="MNDA期間（年数）"
                 value={data.mndaTerm.type === "expires" ? data.mndaTerm.years : 1}
                 onChange={(e) => set("mndaTerm")({ type: "expires", years: Math.max(1, Number(e.target.value) || 1) })}
                 className="w-20 h-7 text-sm"
@@ -120,13 +126,15 @@ export default function MNDAForm({ data, onChange }: Props) {
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
+                name="mndaTerm"
+                aria-label="MNDAの条件に従って終了するまで継続"
                 checked={data.mndaTerm.type === "until_terminated"}
                 onChange={() => set("mndaTerm")({ type: "until_terminated" })}
                 className="accent-primary"
               />
               <span className="text-sm">MNDAの条件に従って終了するまで継続</span>
             </label>
-          </div>
+          </fieldset>
         </CardContent>
       </Card>
 
@@ -137,10 +145,12 @@ export default function MNDAForm({ data, onChange }: Props) {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-xs text-muted-foreground">機密情報が保護される期間</p>
-          <div className="space-y-2">
+          <fieldset className="space-y-2 border-0 p-0 m-0">
+            <legend className="sr-only">機密保持期間の選択</legend>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
+                name="confidentialityTerm"
                 checked={data.confidentialityTerm.type === "years"}
                 onChange={() =>
                   set("confidentialityTerm")({
@@ -154,6 +164,7 @@ export default function MNDAForm({ data, onChange }: Props) {
               <Input
                 type="number"
                 min={1}
+                aria-label="機密保持期間（年数）"
                 value={data.confidentialityTerm.type === "years" ? data.confidentialityTerm.years : 1}
                 onChange={(e) => set("confidentialityTerm")({ type: "years", years: Math.max(1, Number(e.target.value) || 1) })}
                 className="w-20 h-7 text-sm"
@@ -164,13 +175,15 @@ export default function MNDAForm({ data, onChange }: Props) {
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
+                name="confidentialityTerm"
+                aria-label="永久に"
                 checked={data.confidentialityTerm.type === "perpetuity"}
                 onChange={() => set("confidentialityTerm")({ type: "perpetuity" })}
                 className="accent-primary"
               />
               <span className="text-sm">永久に</span>
             </label>
-          </div>
+          </fieldset>
         </CardContent>
       </Card>
 
@@ -181,12 +194,12 @@ export default function MNDAForm({ data, onChange }: Props) {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="space-y-1">
-            <Label>準拠法（都道府県または州）</Label>
-            <Input value={data.governingLaw} onChange={onInputChange("governingLaw")} placeholder="東京都" />
+            <Label htmlFor="governingLaw">準拠法（都道府県または州）</Label>
+            <Input id="governingLaw" value={data.governingLaw} onChange={onInputChange("governingLaw")} placeholder="東京都" />
           </div>
           <div className="space-y-1">
-            <Label>管轄裁判所</Label>
-            <Input value={data.jurisdiction} onChange={onInputChange("jurisdiction")} placeholder="東京地方裁判所" />
+            <Label htmlFor="jurisdiction">管轄裁判所</Label>
+            <Input id="jurisdiction" value={data.jurisdiction} onChange={onInputChange("jurisdiction")} placeholder="東京地方裁判所" />
           </div>
         </CardContent>
       </Card>
@@ -198,6 +211,7 @@ export default function MNDAForm({ data, onChange }: Props) {
         </CardHeader>
         <CardContent>
           <Textarea
+            id="modifications"
             value={data.modifications}
             onChange={onInputChange("modifications")}
             placeholder="標準条件への変更事項があれば記載してください"
@@ -211,11 +225,13 @@ export default function MNDAForm({ data, onChange }: Props) {
       {/* Parties */}
       <PartySection
         label="当事者1"
+        idPrefix="party1"
         party={data.party1}
         onUpdate={(p) => onChange({ ...data, party1: p })}
       />
       <PartySection
         label="当事者2"
+        idPrefix="party2"
         party={data.party2}
         onUpdate={(p) => onChange({ ...data, party2: p })}
       />
