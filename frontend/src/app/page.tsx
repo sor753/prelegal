@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
 import { useReactToPrint } from "react-to-print";
 import { makeDefaultFormData, MndaFormData } from "@/lib/mnda";
 import MNDAForm from "@/components/MNDAForm";
@@ -8,9 +9,26 @@ import MNDADocument from "@/components/MNDADocument";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+// AI: useEffect内でsetStateを呼ぶパターンを避けるため useSyncExternalStore で localStorage を読み取る
+function useSession(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => !!localStorage.getItem("prelegal_session"),
+    () => false,
+  );
+}
+
 export default function Home() {
+  const router = useRouter();
+  const isLoggedIn = useSession();
   const [formData, setFormData] = useState<MndaFormData>(makeDefaultFormData);
   const documentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isLoggedIn) {
+      router.replace("/login");
+    }
+  }, [isLoggedIn, router]);
 
   const handlePrint = useReactToPrint({
     contentRef: documentRef,
@@ -23,17 +41,32 @@ export default function Home() {
     `,
   });
 
+  function handleLogout() {
+    localStorage.removeItem("prelegal_session");
+    router.replace("/login");
+  }
+
+  if (!isLoggedIn) return null;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="sticky top-0 z-10 bg-white border-b shadow-sm">
         <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <h1 className="text-lg font-semibold text-gray-900">MNDA作成ツール</h1>
+            <h1 className="text-lg font-bold" style={{ color: "#032147" }}>
+              Pre<span style={{ color: "#209dd7" }}>legal</span>
+            </h1>
+            <span className="text-sm text-gray-500">MNDA作成ツール</span>
             <Badge variant="secondary">プロトタイプ</Badge>
           </div>
-          <Button onClick={handlePrint} size="sm">
-            PDFとして印刷・保存
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button onClick={handlePrint} size="sm">
+              PDFとして印刷・保存
+            </Button>
+            <Button onClick={handleLogout} variant="ghost" size="sm">
+              ログアウト
+            </Button>
+          </div>
         </div>
       </header>
 

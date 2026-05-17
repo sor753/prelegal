@@ -62,8 +62,9 @@ Thumbs.db
 *.swp
 *.swo
 
-# Claude Code
-.claude/
-
 # Playwright test results
 frontend/test-results/
+
+# Backend
+backend/.venv/
+backend/data/
