@@ -9,7 +9,7 @@ import MNDADocument from "@/components/MNDADocument";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
-// AI: reads localStorage via useSyncExternalStore to avoid setState-in-effect pattern
+// AI: useEffect内でsetStateを呼ぶパターンを避けるため useSyncExternalStore で localStorage を読み取る
 function useSession(): boolean {
   return useSyncExternalStore(
     () => () => {},

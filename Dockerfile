@@ -1,4 +1,4 @@
-# AI: Stage 1: Build Next.js static files
+# AI: ステージ1: Next.js を静的ファイルにビルド
 FROM node:22-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
@@ -6,7 +6,7 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-# AI: Stage 2: FastAPI runtime - serves frontend static files and API
+# AI: ステージ2: FastAPI ランタイム - フロントエンド静的ファイルと API を配信
 FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
 WORKDIR /app
 

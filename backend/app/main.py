@@ -23,6 +23,6 @@ def health():
     return {"status": "ok"}
 
 
-# AI: Static files must be mounted after all API routes
+# AI: APIルートより後にマウントしないと静的ファイルがAPIを上書きしてしまう
 if STATIC_DIR.exists():
     app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="static")
