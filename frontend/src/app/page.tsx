@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useRouter } from "next/navigation";
 import { useReactToPrint } from "react-to-print";
 import { makeDefaultFormData, MndaFormData } from "@/lib/mnda";
@@ -9,19 +9,26 @@ import MNDADocument from "@/components/MNDADocument";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+// AI: reads localStorage via useSyncExternalStore to avoid setState-in-effect pattern
+function useSession(): boolean {
+  return useSyncExternalStore(
+    () => () => {},
+    () => !!localStorage.getItem("prelegal_session"),
+    () => false,
+  );
+}
+
 export default function Home() {
   const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const isLoggedIn = useSession();
   const [formData, setFormData] = useState<MndaFormData>(makeDefaultFormData);
   const documentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!localStorage.getItem("prelegal_session")) {
+    if (!isLoggedIn) {
       router.replace("/login");
-    } else {
-      setReady(true);
     }
-  }, [router]);
+  }, [isLoggedIn, router]);
 
   const handlePrint = useReactToPrint({
     contentRef: documentRef,
@@ -39,7 +46,7 @@ export default function Home() {
     router.replace("/login");
   }
 
-  if (!ready) return null;
+  if (!isLoggedIn) return null;
 
   return (
     <div className="min-h-screen bg-gray-50">
