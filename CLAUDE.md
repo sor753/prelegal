@@ -6,7 +6,7 @@
 
 @catalog.json
 
-現在の実装では、AIチャットを介して4種類の文書タイプすべてに対応しており、完全なユーザー認証と文書の永続化機能を提供しています。
+現在の実装 (v1基盤) では、MNDA（相互秘密保持契約）の作成ツールのみ提供しています。ログイン画面は偽実装（認証なし）で、文書の永続化は未実装です。
 
 ## 開発プロセス
 
@@ -25,20 +25,20 @@ LLMを呼び出すコードを記述する際は、Cerebrasスキルを使用し
 
 ## 技術設計
 
-プロジェクト全体を Docker コンテナにパッケージ化する必要があります。
+### 構成 (実装済み)
 
-バックエンドは backend/ ディレクトリに配置し、FastAPI を使用する uv プロジェクトとします。
+- **Docker**: multi-stage ビルド (`Dockerfile`) + `docker-compose.yml` でシングルサービス構成
+- **バックエンド**: `backend/` — FastAPI + uv プロジェクト。SQLite を起動ごとに新規作成
+- **フロントエンド**: `frontend/` — Next.js (`output: export` で静的ビルド)。FastAPI が `/` で配信
+- **DB**: SQLite (`/data/prelegal.db`)。コンテナ起動ごとに新規作成。現在は `users` テーブルのみ
+- **ポート**: http://localhost:8000 のみ (フロントエンドと API を同一ポートで配信)
 
-フロントエンドは frontend/ ディレクトリに配置します。
-データベースは SQLite を使用し、Docker コンテナが起動するたびに新規に作成します。これにより、サインアップとサインイン機能を備えたユーザーテーブルを作成できます。
-可能であれば、フロントエンドを静的にビルドし、FastAPI 経由で提供することも検討してください。
-
-scripts/ ディレクトリには、以下のスクリプトが必要です。:
+### 起動・停止スクリプト (実装済み)
 
 ```bash
 # Mac
-scripts/start-mac.sh    # Start
-scripts/stop-mac.sh     # Stop
+scripts/start-mac.sh    # docker compose up -d --build
+scripts/stop-mac.sh     # docker compose down
 
 # Linux
 scripts/start-linux.sh
@@ -49,7 +49,9 @@ scripts/start-windows.ps1
 scripts/stop-windows.ps1
 ```
 
-Backend available at http://localhost:8000
+### API エンドポイント
+
+- `GET /api/health` — ヘルスチェック
 
 ## カラースキーマ
 
@@ -58,3 +60,15 @@ Backend available at http://localhost:8000
 - Purple Secondary: `#753991` (submit buttons)
 - Dark Navy: `#032147` (headings)
 - Gray Text: `#888888`
+
+## 実装状況
+
+| 機能 | 状態 | チケット |
+|------|------|----------|
+| v1基盤 (Docker・バックエンド・スクリプト) | 完了 | KAN-6 |
+| ログイン画面 (偽実装・localStorage) | 完了 | KAN-6 |
+| MNDA作成ツール | 完了 | KAN-5以前 |
+| 法的テンプレート (4種) | 完了 | KAN-4以前 |
+| 実認証 (signup/signin) | 未実装 | - |
+| 文書の永続化 | 未実装 | - |
+| AIチャット連携 | 未実装 | - |
