@@ -5,6 +5,7 @@ from typing import Literal
 import litellm
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, ValidationError
+from litellm.exceptions import APIError as LiteLLMAPIError
 
 router = APIRouter()
 
@@ -109,12 +110,15 @@ async def chat(req: ChatRequest) -> ChatResponse:
     llm_messages = [{"role": "system", "content": system_content}]
     llm_messages += [{"role": m.role, "content": m.content} for m in req.messages]
 
-    response = await litellm.acompletion(
-        model="openrouter/openai/gpt-oss-120b",
-        messages=llm_messages,
-        response_format={"type": "json_object"},
-        api_key=api_key,
-    )
+    try:
+        response = await litellm.acompletion(
+            model="openrouter/openai/gpt-oss-120b",
+            messages=llm_messages,
+            response_format={"type": "json_object"},
+            api_key=api_key,
+        )
+    except LiteLLMAPIError as e:
+        raise HTTPException(status_code=502, detail=f"AI APIエラー: {e.message}")
 
     content = response.choices[0].message.content
     try:
