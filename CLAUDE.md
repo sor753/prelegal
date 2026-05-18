@@ -6,7 +6,7 @@
 
 @catalog.json
 
-現在の実装 (v1基盤) では、MNDA（相互秘密保持契約）の作成ツールのみ提供しています。ログイン画面は偽実装（認証なし）で、文書の永続化は未実装です。
+現在の実装では、MNDA（相互秘密保持契約）の作成ツールとAIチャット機能を提供しています。ログイン画面は偽実装（認証なし）で、文書の永続化は未実装です。
 
 ## 開発プロセス
 
@@ -19,9 +19,9 @@
 
 ## AI設計
 
-LLMを呼び出すコードを記述する際は、Cerebrasスキルを使用して、OpenRouter経由でLiteLLMを`openrouter/openai/gpt-oss-120b`モデルに渡して、Cerebrasを推論プロバイダとして使用します。構造化出力を使用することで、結果を解釈し、法的文書のフィールドに値を入力できます。
+LLMを呼び出すコードを記述する際は、OpenRouter経由でLiteLLMを`openrouter/openai/gpt-oss-120b`モデルに渡して、Cerebrasを推論プロバイダとして使用します。構造化出力（`response_format={"type": "json_object"}`）を使用することで、結果を解釈し、法的文書のフィールドに値を入力できます。
 
-プロジェクトルートの .env ファイルに OPENROUTER_API_KEY が含まれています。
+プロジェクトルートの `.env` ファイルに `OPENROUTER_API_KEY` が含まれています。バックエンドは起動時に `load_dotenv()` でこのファイルを読み込みます。Docker では `docker-compose.yml` の `env_file: .env` 経由で環境変数として渡されます。
 
 ## 技術設計
 
@@ -52,6 +52,7 @@ scripts/stop-windows.ps1
 ### API エンドポイント
 
 - `GET /api/health` — ヘルスチェック
+- `POST /api/chat` — AIチャット (`backend/app/routers/chat.py`)。リクエスト: `{messages, current_form}`、レスポンス: `{reply, updates}`
 
 ## カラースキーマ
 
@@ -69,6 +70,6 @@ scripts/stop-windows.ps1
 | ログイン画面 (偽実装・localStorage) | 完了 | KAN-6 |
 | MNDA作成ツール | 完了 | KAN-5以前 |
 | 法的テンプレート (4種) | 完了 | KAN-4以前 |
+| AIチャット (MNDA限定・フォーム自動入力) | 完了 | KAN-7 |
 | 実認証 (signup/signin) | 未実装 | - |
 | 文書の永続化 | 未実装 | - |
-| AIチャット連携 | 未実装 | - |
