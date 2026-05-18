@@ -1,40 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { MndaFormData } from "@/lib/mnda";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-export interface PartyUpdate {
-  signatoryName?: string | null;
-  title?: string | null;
-  company?: string | null;
-  noticeAddress?: string | null;
-  date?: string | null;
-}
-
-export interface MndaTermUpdate {
-  type: "expires" | "until_terminated";
-  years?: number | null;
-}
-
-export interface ConfidentialityTermUpdate {
-  type: "years" | "perpetuity";
-  years?: number | null;
-}
-
-export interface FormUpdates {
-  purpose?: string | null;
-  effectiveDate?: string | null;
-  mndaTerm?: MndaTermUpdate | null;
-  confidentialityTerm?: ConfidentialityTermUpdate | null;
-  governingLaw?: string | null;
-  jurisdiction?: string | null;
-  modifications?: string | null;
-  party1?: PartyUpdate | null;
-  party2?: PartyUpdate | null;
-}
 
 interface ChatMessage {
   role: "user" | "assistant";
@@ -43,19 +12,23 @@ interface ChatMessage {
 
 interface ChatApiResponse {
   reply: string;
-  updates: FormUpdates;
+  updates: Record<string, unknown>;
 }
 
 interface Props {
-  formData: MndaFormData;
-  onFormUpdate: (updates: FormUpdates) => void;
+  formData: Record<string, unknown>;
+  docType: string;
+  onFormUpdate: (updates: Record<string, unknown>) => void;
 }
 
-export default function ChatPanel({ formData, onFormUpdate }: Props) {
+export default function ChatPanel({ formData, docType, onFormUpdate }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  // AI: refでformDataの最新値を保持し、async関数内のstale closure問題を回避する
+  const formDataRef = useRef(formData);
+  useEffect(() => { formDataRef.current = formData; }, [formData]);
 
   // AI: 初回マウント時にAIに最初の質問をさせる
   useEffect(() => {
@@ -67,13 +40,13 @@ export default function ChatPanel({ formData, onFormUpdate }: Props) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  async function sendToAI(msgs: ChatMessage[]) {
+  const sendToAI = useCallback(async (msgs: ChatMessage[]) => {
     setLoading(true);
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: msgs, current_form: formData }),
+        body: JSON.stringify({ messages: msgs, current_form: formDataRef.current, doc_type: docType }),
       });
       if (!res.ok) throw new Error("APIエラー");
       const data: ChatApiResponse = await res.json();
@@ -87,7 +60,7 @@ export default function ChatPanel({ formData, onFormUpdate }: Props) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [docType, onFormUpdate]);
 
   async function handleSubmit() {
     if (!input.trim() || loading) return;
