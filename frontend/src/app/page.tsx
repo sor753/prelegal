@@ -6,8 +6,51 @@ import { useReactToPrint } from "react-to-print";
 import { makeDefaultFormData, MndaFormData } from "@/lib/mnda";
 import MNDAForm from "@/components/MNDAForm";
 import MNDADocument from "@/components/MNDADocument";
+import ChatPanel, { FormUpdates } from "@/components/ChatPanel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+function applyUpdates(current: MndaFormData, updates: FormUpdates): MndaFormData {
+  const next = { ...current };
+  if (updates.purpose != null) next.purpose = updates.purpose;
+  if (updates.effectiveDate != null) next.effectiveDate = updates.effectiveDate;
+  if (updates.mndaTerm != null) {
+    if (updates.mndaTerm.type === "expires") {
+      next.mndaTerm = { type: "expires", years: updates.mndaTerm.years ?? 1 };
+    } else {
+      next.mndaTerm = { type: "until_terminated" };
+    }
+  }
+  if (updates.confidentialityTerm != null) {
+    if (updates.confidentialityTerm.type === "years") {
+      next.confidentialityTerm = { type: "years", years: updates.confidentialityTerm.years ?? 1 };
+    } else {
+      next.confidentialityTerm = { type: "perpetuity" };
+    }
+  }
+  if (updates.governingLaw != null) next.governingLaw = updates.governingLaw;
+  if (updates.jurisdiction != null) next.jurisdiction = updates.jurisdiction;
+  if (updates.modifications != null) next.modifications = updates.modifications;
+  if (updates.party1 != null) {
+    next.party1 = {
+      signatoryName: updates.party1.signatoryName ?? current.party1.signatoryName,
+      title: updates.party1.title ?? current.party1.title,
+      company: updates.party1.company ?? current.party1.company,
+      noticeAddress: updates.party1.noticeAddress ?? current.party1.noticeAddress,
+      date: updates.party1.date ?? current.party1.date,
+    };
+  }
+  if (updates.party2 != null) {
+    next.party2 = {
+      signatoryName: updates.party2.signatoryName ?? current.party2.signatoryName,
+      title: updates.party2.title ?? current.party2.title,
+      company: updates.party2.company ?? current.party2.company,
+      noticeAddress: updates.party2.noticeAddress ?? current.party2.noticeAddress,
+      date: updates.party2.date ?? current.party2.date,
+    };
+  }
+  return next;
+}
 
 // AI: useEffect内でsetStateを呼ぶパターンを避けるため useSyncExternalStore で localStorage を読み取る
 function useSession(): boolean {
@@ -70,16 +113,26 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="max-w-screen-xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <main className="max-w-screen-2xl mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-2">
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">入力フォーム</h2>
-            <MNDAForm data={formData} onChange={setFormData} />
+            <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 8rem)" }}>
+              <MNDAForm data={formData} onChange={setFormData} />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">AIチャット</h2>
+            <ChatPanel
+              formData={formData}
+              onFormUpdate={(updates) => setFormData((prev) => applyUpdates(prev, updates))}
+            />
           </div>
 
           <div className="space-y-2">
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">プレビュー</h2>
-            <div className="bg-white border rounded-lg shadow-sm overflow-auto max-h-[calc(100vh-8rem)] p-8">
+            <div className="bg-white border rounded-lg shadow-sm overflow-auto p-8" style={{ maxHeight: "calc(100vh - 8rem)" }}>
               <MNDADocument ref={documentRef} data={formData} />
             </div>
           </div>
