@@ -6,7 +6,7 @@
 
 @catalog.json
 
-現在の実装では、MNDA（相互秘密保持契約）の作成ツールとAIチャット機能を提供しています。ログイン画面は偽実装（認証なし）で、文書の永続化は未実装です。
+現在の実装では、4種類の法的文書（MNDA・MNDA表紙・デザインパートナー契約・SLA）の作成ツールとAIチャット機能を提供しています。ログイン後に文書選択画面が表示され、各文書ページでAIチャットによるフォーム自動入力が使えます。ログイン画面は偽実装（認証なし）で、文書の永続化は未実装です。
 
 ## 開発プロセス
 
@@ -52,7 +52,18 @@ scripts/stop-windows.ps1
 ### API エンドポイント
 
 - `GET /api/health` — ヘルスチェック
-- `POST /api/chat` — AIチャット (`backend/app/routers/chat.py`)。リクエスト: `{messages, current_form}`、レスポンス: `{reply, updates}`
+- `POST /api/chat` — AIチャット (`backend/app/routers/chat.py`)。リクエスト: `{messages, current_form, doc_type}`、レスポンス: `{reply, updates}`
+
+`doc_type` は `"mnda"` / `"mnda_coverpage"` / `"design_partner"` / `"sla"` のいずれか。各タイプで異なるシステムプロンプト・Pydanticモデルを使用。
+
+### フロントエンドルート
+
+- `/` — 文書選択画面（ログイン後）
+- `/mnda` — 相互秘密保持契約 作成ツール
+- `/mnda-coverpage` — 相互秘密保持契約 表紙 作成ツール
+- `/design-partner` — デザインパートナー契約 作成ツール
+- `/sla` — サービスレベル契約 作成ツール
+- `/login` — ログイン画面（偽実装）
 
 ## カラースキーマ
 
@@ -71,5 +82,6 @@ scripts/stop-windows.ps1
 | MNDA作成ツール | 完了 | KAN-5以前 |
 | 法的テンプレート (4種) | 完了 | KAN-4以前 |
 | AIチャット (MNDA限定・フォーム自動入力) | 完了 | KAN-7 |
+| AIチャット (全文書タイプ対応・文書選択画面) | 完了 | KAN-8 |
 | 実認証 (signup/signin) | 未実装 | - |
 | 文書の永続化 | 未実装 | - |
