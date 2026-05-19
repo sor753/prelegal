@@ -1,93 +1,44 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useReactToPrint } from "react-to-print";
-import { makeDefaultFormData, MndaFormData } from "@/lib/mnda";
-import MNDAForm from "@/components/MNDAForm";
-import MNDADocument from "@/components/MNDADocument";
-import ChatPanel, { FormUpdates } from "@/components/ChatPanel";
+import { useSession } from "@/lib/session";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
-function applyUpdates(current: MndaFormData, updates: FormUpdates): MndaFormData {
-  const next = { ...current };
-  if (updates.purpose != null) next.purpose = updates.purpose;
-  if (updates.effectiveDate != null) next.effectiveDate = updates.effectiveDate;
-  if (updates.mndaTerm != null) {
-    if (updates.mndaTerm.type === "expires") {
-      next.mndaTerm = { type: "expires", years: updates.mndaTerm.years ?? 1 };
-    } else {
-      next.mndaTerm = { type: "until_terminated" };
-    }
-  }
-  if (updates.confidentialityTerm != null) {
-    if (updates.confidentialityTerm.type === "years") {
-      next.confidentialityTerm = { type: "years", years: updates.confidentialityTerm.years ?? 1 };
-    } else {
-      next.confidentialityTerm = { type: "perpetuity" };
-    }
-  }
-  if (updates.governingLaw != null) next.governingLaw = updates.governingLaw;
-  if (updates.jurisdiction != null) next.jurisdiction = updates.jurisdiction;
-  if (updates.modifications != null) next.modifications = updates.modifications;
-  if (updates.party1 != null) {
-    next.party1 = {
-      signatoryName: updates.party1.signatoryName ?? current.party1.signatoryName,
-      title: updates.party1.title ?? current.party1.title,
-      company: updates.party1.company ?? current.party1.company,
-      noticeAddress: updates.party1.noticeAddress ?? current.party1.noticeAddress,
-      date: updates.party1.date ?? current.party1.date,
-    };
-  }
-  if (updates.party2 != null) {
-    next.party2 = {
-      signatoryName: updates.party2.signatoryName ?? current.party2.signatoryName,
-      title: updates.party2.title ?? current.party2.title,
-      company: updates.party2.company ?? current.party2.company,
-      noticeAddress: updates.party2.noticeAddress ?? current.party2.noticeAddress,
-      date: updates.party2.date ?? current.party2.date,
-    };
-  }
-  return next;
-}
+const DOCUMENTS = [
+  {
+    href: "/mnda",
+    name: "相互秘密保持契約",
+    nameEn: "Mutual NDA",
+    description: "両当事者が機密情報を共有するための標準的な相互秘密保持契約。",
+  },
+  {
+    href: "/mnda-coverpage",
+    name: "相互秘密保持契約 表紙",
+    nameEn: "Mutual NDA Cover Page",
+    description: "両当事者が記入・署名するための相互秘密保持契約の表紙のみ。",
+  },
+  {
+    href: "/design-partner",
+    name: "デザインパートナー契約",
+    nameEn: "Design Partner Agreement",
+    description: "フィードバック、機密保持、知的財産を含む早期アクセス製品テストパートナーシップの契約。",
+  },
+  {
+    href: "/sla",
+    name: "サービスレベル契約",
+    nameEn: "Service Level Agreement",
+    description: "稼働率目標、応答時間、サービスクレジットを定義するクラウドサービスのSLA。",
+  },
+] as const;
 
-// AI: useEffect内でsetStateを呼ぶパターンを避けるため useSyncExternalStore で localStorage を読み取る
-function useSession(): boolean {
-  return useSyncExternalStore(
-    () => () => {},
-    () => !!localStorage.getItem("prelegal_session"),
-    () => false,
-  );
-}
-
-export default function Home() {
+export default function HomePage() {
   const router = useRouter();
   const isLoggedIn = useSession();
-  const [formData, setFormData] = useState<MndaFormData>(makeDefaultFormData);
-  const documentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!isLoggedIn) {
-      router.replace("/login");
-    }
+    if (!isLoggedIn) router.replace("/login");
   }, [isLoggedIn, router]);
-
-  const handlePrint = useReactToPrint({
-    contentRef: documentRef,
-    documentTitle: "相互秘密保持契約書",
-    pageStyle: `
-      @page { size: A4; margin: 20mm 15mm; }
-      @media print {
-        body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-      }
-    `,
-  });
-
-  function handleLogout() {
-    localStorage.removeItem("prelegal_session");
-    router.replace("/login");
-  }
 
   if (!isLoggedIn) return null;
 
@@ -95,47 +46,58 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50">
       <header className="sticky top-0 z-10 bg-white border-b shadow-sm">
         <div className="max-w-screen-xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-lg font-bold" style={{ color: "#032147" }}>
-              Pre<span style={{ color: "#209dd7" }}>legal</span>
-            </h1>
-            <span className="text-sm text-gray-500">MNDA作成ツール</span>
-            <Badge variant="secondary">プロトタイプ</Badge>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button onClick={handlePrint} size="sm">
-              PDFとして印刷・保存
-            </Button>
-            <Button onClick={handleLogout} variant="ghost" size="sm">
-              ログアウト
-            </Button>
-          </div>
+          <h1 className="text-lg font-bold" style={{ color: "#032147" }}>
+            Pre<span style={{ color: "#209dd7" }}>legal</span>
+          </h1>
+          <Button
+            onClick={() => { localStorage.removeItem("prelegal_session"); router.replace("/login"); }}
+            variant="ghost"
+            size="sm"
+          >
+            ログアウト
+          </Button>
         </div>
       </header>
 
-      <main className="max-w-screen-2xl mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="space-y-2">
-            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">入力フォーム</h2>
-            <div className="overflow-y-auto" style={{ maxHeight: "calc(100vh - 8rem)" }}>
-              <MNDAForm data={formData} onChange={setFormData} />
-            </div>
-          </div>
+      <main className="max-w-screen-md mx-auto px-4 py-12">
+        <div className="text-center mb-10">
+          <h2 className="text-2xl font-bold mb-2" style={{ color: "#032147" }}>
+            作成する文書を選択してください
+          </h2>
+          <p className="text-sm" style={{ color: "#888888" }}>
+            AIチャットがフィールドを自動入力します
+          </p>
+        </div>
 
-          <div className="space-y-2">
-            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">AIチャット</h2>
-            <ChatPanel
-              formData={formData}
-              onFormUpdate={(updates) => setFormData((prev) => applyUpdates(prev, updates))}
-            />
-          </div>
+        <div className="space-y-3">
+          {DOCUMENTS.map((doc) => (
+            <button
+              key={doc.href}
+              onClick={() => router.push(doc.href)}
+              className="w-full text-left bg-white border rounded-xl p-5 hover:border-blue-400 hover:shadow-md transition-all group"
+            >
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold text-base" style={{ color: "#032147" }}>
+                      {doc.name}
+                    </span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                      {doc.nameEn}
+                    </span>
+                  </div>
+                  <p className="text-sm" style={{ color: "#888888" }}>
+                    {doc.description}
+                  </p>
+                </div>
+                <span className="text-gray-300 group-hover:text-blue-400 transition-colors text-xl mt-1">→</span>
+              </div>
+            </button>
+          ))}
+        </div>
 
-          <div className="space-y-2">
-            <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">プレビュー</h2>
-            <div className="bg-white border rounded-lg shadow-sm overflow-auto p-8" style={{ maxHeight: "calc(100vh - 8rem)" }}>
-              <MNDADocument ref={documentRef} data={formData} />
-            </div>
-          </div>
+        <div className="mt-10 text-center">
+          <div className="h-1 w-12 rounded-full mx-auto" style={{ backgroundColor: "#ecad0a" }} />
         </div>
       </main>
     </div>
