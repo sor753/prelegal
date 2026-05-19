@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/session";
+import { useSession, clearToken, getToken } from "@/lib/session";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const DOCUMENTS = [
   {
@@ -32,13 +33,65 @@ const DOCUMENTS = [
   },
 ] as const;
 
+const DOC_TYPE_LABELS: Record<string, string> = {
+  mnda: "MNDA",
+  mnda_coverpage: "MNDA表紙",
+  design_partner: "DPA",
+  sla: "SLA",
+};
+
+const DOC_TYPE_HREFS: Record<string, string> = {
+  mnda: "/mnda",
+  mnda_coverpage: "/mnda-coverpage",
+  design_partner: "/design-partner",
+  sla: "/sla",
+};
+
+interface SavedDoc {
+  id: number;
+  doc_type: string;
+  title: string;
+  saved_at: string;
+}
+
 export default function HomePage() {
   const router = useRouter();
   const isLoggedIn = useSession();
+  const [savedDocs, setSavedDocs] = useState<SavedDoc[]>([]);
 
   useEffect(() => {
     if (!isLoggedIn) router.replace("/login");
   }, [isLoggedIn, router]);
+
+  useEffect(() => {
+    if (!isLoggedIn) return;
+    const token = getToken();
+    if (!token) return;
+    fetch("/api/documents", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.status === 401) { clearToken(); router.replace("/login"); return []; }
+        return res.ok ? res.json() : [];
+      })
+      .then((data: SavedDoc[]) => setSavedDocs(data))
+      .catch(() => {});
+  }, [isLoggedIn, router]);
+
+  function handleDelete(id: number) {
+    const token = getToken();
+    if (!token) return;
+    fetch(`/api/documents/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((res) => {
+      if (res.ok) setSavedDocs((prev) => prev.filter((d) => d.id !== id));
+    }).catch(() => {});
+  }
+
+  function formatDate(iso: string) {
+    return new Date(iso).toLocaleDateString("ja-JP", { year: "numeric", month: "short", day: "numeric" });
+  }
 
   if (!isLoggedIn) return null;
 
@@ -50,7 +103,7 @@ export default function HomePage() {
             Pre<span style={{ color: "#209dd7" }}>legal</span>
           </h1>
           <Button
-            onClick={() => { localStorage.removeItem("prelegal_session"); router.replace("/login"); }}
+            onClick={() => { clearToken(); router.replace("/login"); }}
             variant="ghost"
             size="sm"
           >
@@ -60,14 +113,56 @@ export default function HomePage() {
       </header>
 
       <main className="max-w-screen-md mx-auto px-4 py-12">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold mb-2" style={{ color: "#032147" }}>
-            作成する文書を選択してください
-          </h2>
-          <p className="text-sm" style={{ color: "#888888" }}>
-            AIチャットがフィールドを自動入力します
-          </p>
-        </div>
+        {savedDocs.length > 0 && (
+          <div className="mb-10">
+            <h2 className="text-lg font-bold mb-4" style={{ color: "#032147" }}>保存済み文書</h2>
+            <div className="space-y-2">
+              {savedDocs.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="bg-white border rounded-xl px-5 py-4 flex items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <Badge variant="secondary" className="shrink-0">{DOC_TYPE_LABELS[doc.doc_type] ?? doc.doc_type}</Badge>
+                    <span className="font-medium truncate" style={{ color: "#032147" }}>{doc.title}</span>
+                    <span className="text-xs shrink-0" style={{ color: "#888888" }}>{formatDate(doc.saved_at)}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => router.push(DOC_TYPE_HREFS[doc.doc_type] ?? "/")}
+                    >
+                      開く
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(doc.id)}
+                      className="text-red-400 hover:text-red-600"
+                    >
+                      削除
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 border-t pt-8">
+              <h2 className="text-lg font-bold mb-4" style={{ color: "#032147" }}>新規作成</h2>
+            </div>
+          </div>
+        )}
+
+        {savedDocs.length === 0 && (
+          <div className="text-center mb-10">
+            <h2 className="text-2xl font-bold mb-2" style={{ color: "#032147" }}>
+              作成する文書を選択してください
+            </h2>
+            <p className="text-sm" style={{ color: "#888888" }}>
+              AIチャットがフィールドを自動入力します
+            </p>
+          </div>
+        )}
 
         <div className="space-y-3">
           {DOCUMENTS.map((doc) => (
