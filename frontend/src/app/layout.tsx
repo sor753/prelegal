@@ -9,8 +9,8 @@ const notoSansJP = Noto_Sans_JP({
 });
 
 export const metadata: Metadata = {
-  title: "MNDA作成ツール",
-  description: "相互秘密保持契約書を簡単に作成・ダウンロードできるツール",
+  title: "Prelegal - 法的契約書をAIで作成",
+  description: "AIチャットによる法的文書の作成を支援するSaaSツール",
 };
 
 export default function RootLayout({

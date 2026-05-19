@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useReactToPrint } from "react-to-print";
 import { makeDefaultFormData, SlaFormData } from "@/lib/sla";
-import { useSession } from "@/lib/session";
+import { useSession, clearToken, getToken } from "@/lib/session";
 import SLAForm from "@/components/SLAForm";
 import SLADocument from "@/components/SLADocument";
 import ChatPanel from "@/components/ChatPanel";
+import DisclaimerBanner from "@/components/DisclaimerBanner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -45,6 +46,7 @@ export default function SlaPage() {
   const router = useRouter();
   const isLoggedIn = useSession();
   const [formData, setFormData] = useState<SlaFormData>(makeDefaultFormData);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const documentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,6 +64,26 @@ export default function SlaPage() {
     `,
   });
 
+  async function handleSave() {
+    const token = getToken();
+    if (!token) return;
+    setSaveStatus("saving");
+    const company = formData.provider?.company;
+    const title = company ? `SLA - ${company}` : `SLA - ${new Date().toLocaleDateString("ja-JP")}`;
+    try {
+      const res = await fetch("/api/documents", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ doc_type: "sla", title, form_data: formData }),
+      });
+      if (!res.ok) throw new Error("保存に失敗しました");
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch {
+      setSaveStatus("idle");
+    }
+  }
+
   if (!isLoggedIn) return null;
 
   return (
@@ -77,7 +99,15 @@ export default function SlaPage() {
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={handlePrint} size="sm">PDFとして印刷・保存</Button>
-            <Button onClick={() => { localStorage.removeItem("prelegal_session"); router.replace("/login"); }} variant="ghost" size="sm">
+            <Button
+              onClick={handleSave}
+              disabled={saveStatus === "saving"}
+              size="sm"
+              variant="outline"
+            >
+              {saveStatus === "saved" ? "保存完了" : saveStatus === "saving" ? "保存中..." : "保存"}
+            </Button>
+            <Button onClick={() => { clearToken(); router.replace("/login"); }} variant="ghost" size="sm">
               ログアウト
             </Button>
           </div>
@@ -85,6 +115,7 @@ export default function SlaPage() {
       </header>
 
       <main className="max-w-screen-2xl mx-auto px-4 py-6">
+        <DisclaimerBanner />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="space-y-2">
             <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide">入力フォーム</h2>

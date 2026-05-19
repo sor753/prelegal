@@ -1,17 +1,45 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { setToken } from "@/lib/session";
+
+type Tab = "signin" | "signup";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [tab, setTab] = useState<Tab>("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    localStorage.setItem("prelegal_session", "1");
-    router.push("/");
+    setError("");
+    setLoading(true);
+    const endpoint = tab === "signin" ? "/api/auth/signin" : "/api/auth/signup";
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.detail ?? "エラーが発生しました");
+        return;
+      }
+      setToken(data.token);
+      router.push("/");
+    } catch {
+      setError("ネットワークエラーが発生しました");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -26,44 +54,75 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-          <h2 className="text-xl font-semibold mb-6" style={{ color: "#032147" }}>
-            サインイン
-          </h2>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="email">メールアドレス</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                required
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="password">パスワード</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full mt-2 cursor-pointer text-white border-0"
-              style={{ backgroundColor: "#753991" }}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <div className="flex border-b">
+            <button
+              onClick={() => { setTab("signin"); setError(""); }}
+              className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                tab === "signin"
+                  ? "border-b-2 text-white"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              style={tab === "signin" ? { borderColor: "#209dd7", backgroundColor: "#209dd7" } : {}}
             >
               サインイン
-            </Button>
-          </form>
+            </button>
+            <button
+              onClick={() => { setTab("signup"); setError(""); }}
+              className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                tab === "signup"
+                  ? "border-b-2 text-white"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+              style={tab === "signup" ? { borderColor: "#209dd7", backgroundColor: "#209dd7" } : {}}
+            >
+              新規登録
+            </button>
+          </div>
 
-          <p className="mt-5 text-xs text-center" style={{ color: "#888888" }}>
-            ※ デモ版のため、任意のメールアドレスとパスワードでサインインできます
-          </p>
+          <div className="p-8">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="email">メールアドレス</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="password">パスワード</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                {tab === "signup" && (
+                  <p className="text-xs" style={{ color: "#888888" }}>8文字以上で入力してください</p>
+                )}
+              </div>
+
+              {error && (
+                <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">{error}</p>
+              )}
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full mt-2 cursor-pointer text-white border-0"
+                style={{ backgroundColor: "#753991" }}
+              >
+                {loading ? "処理中..." : tab === "signin" ? "サインイン" : "アカウントを作成"}
+              </Button>
+            </form>
+          </div>
         </div>
 
         <div className="mt-6 flex justify-center">
